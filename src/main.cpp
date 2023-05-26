@@ -4,8 +4,9 @@
   //                WEB kontrollü Robot Süpürge                  //
  //               WEB ÜZERİNDEN ve OTONOM KONTROLÜ              //
 /////////////////////////////////////////////////////////////////
+//https://github.com/ikrammert/RobotSupurge-With-WebSocet-ESP32
 
-
+//Kütüphaneleri Tanımlıyoruz
 #include <Arduino.h>
 #ifdef ESP32
 #include <WiFi.h>
@@ -15,7 +16,6 @@
 #include <ESPAsyncTCP.h>
 #endif
 #include <ESPAsyncWebServer.h>
-
 #include <iostream>
 #include <sstream>
 
@@ -25,7 +25,7 @@
 long sure;
 long uzaklik;
 
-struct MOTOR_PINS
+struct MOTOR_PINS //Motor ve PWM pinleri
 {
   int pinEn;  
   int pinIN1;
@@ -34,21 +34,21 @@ struct MOTOR_PINS
 
 std::vector<MOTOR_PINS> motorPins = 
 {
-  {22, 26, 27},  //RIGHT_MOTOR Pins (EnA, IN1, IN2)
-  {23, 12, 14},  //LEFT_MOTOR  Pins (EnB, IN3, IN4)
+  {22, 26, 27},  //Sağ_MOTOR Pins (EnA, IN1, IN2)
+  {23, 12, 14},  //Sol_MOTOR  Pins (EnB, IN3, IN4)
 };
 
-#define UP 1
+#define UP 1     //Gönderilecek değerleri tanımlanması
 #define DOWN 2
 #define LEFT 3
 #define RIGHT 4
 #define STOP 0
 
-#define OtoNo 5
+#define OtoNo 5 //Otonom Durum için tanımlama
 #define OtoYes 6
 int OtoDurum = 0;
 
-int IN6 = 5;
+int IN6 = 5;    //SüpürgeRölesi için tanımlama
 #define SupurON 8
 #define SupurOFF 7
 int SupurDurum = 0;
@@ -59,16 +59,16 @@ int SupurDurum = 0;
 #define FORWARD 1
 #define BACKWARD -1
 
-const int PWMFreq = 1000; /* 1 KHz */
+const int PWMFreq = 1000; /* 1 KHz Motor hız ayarı için*/
 const int PWMResolution = 8;
 const int PWMSpeedChannel = 4;
 
-const char* ssid     = "MyWiFiCar";
+const char* ssid     = "ikrammert"; //WiFi ağını kuruyoruz
 const char* password = "12345678";
 
 AsyncWebServer server(80);
 AsyncWebSocket wsCarInput("/CarInput");
-
+//HTML Sayfamızı oluşturuyoruz
 const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
 <!DOCTYPE html>
 <html>
@@ -234,7 +234,7 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
 </html>
 )HTMLHOMEPAGE";
 
-
+//Motor Hareket Fonksiyonu
 void rotateMotor(int motorNumber, int motorDirection)
 {
   if (motorDirection == FORWARD)
@@ -286,7 +286,7 @@ void okuUltrasonic() {
   delay(200);
 }
 
-void moveCar(int inputValue)
+void moveCar(int inputValue)  //Gelen datanın değerlendirilmesi
 {
   Serial.printf("Got value as %d\n", inputValue);  
   switch(inputValue)
@@ -349,7 +349,7 @@ void moveCar(int inputValue)
   }
 }
 
-void handleRoot(AsyncWebServerRequest *request) 
+void handleRoot(AsyncWebServerRequest *request) //Request yapısı
 {
   request->send_P(200, "text/html", htmlHomePage);
 }
@@ -406,9 +406,9 @@ void onCarInputWebSocketEvent(AsyncWebSocket *server,
   }
 }
 
-void setUpPinModes()
+void setUpPinModes() //Pinleri modlarını ayarlıyoruz
 {
-  //Set up PWM
+  //PWM
   ledcSetup(PWMSpeedChannel, PWMFreq, PWMResolution);
       
   for (int i = 0; i < motorPins.size(); i++)
@@ -416,12 +416,9 @@ void setUpPinModes()
     pinMode(motorPins[i].pinEn, OUTPUT);    
     pinMode(motorPins[i].pinIN1, OUTPUT);
     pinMode(motorPins[i].pinIN2, OUTPUT);  
-
-    /* Attach the PWM Channel to the motor enb Pin */
     ledcAttachPin(motorPins[i].pinEn, PWMSpeedChannel);
   }
   moveCar(STOP);
-
   //Ultra Sonic Sensör Kurulumu
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
